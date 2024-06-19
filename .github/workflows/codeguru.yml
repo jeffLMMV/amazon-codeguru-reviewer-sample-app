@@ -37,8 +37,8 @@ jobs:
 
     - name: CodeGuru Reviewer
       uses: aws-actions/codeguru-reviewer@v1.1
-      if: steps.iam-role.outcome == 'success'
-      continue-on-error: false
+      #if: steps.iam-role.outcome == 'success'
+      #continue-on-error: false
       with:          
         s3_bucket: ${{ secrets.AWS_CODEGURU_REVIEWER_S3_BUCKET }}
         build_path: ./target/classes
