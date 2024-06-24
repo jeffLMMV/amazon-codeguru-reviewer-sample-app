@@ -1,7 +1,8 @@
 name: Analyze with CodeGuru Reviewer
 
 on: 
- - push
+ #- push
+ - pull_request
  - workflow_dispatch # This allows manual triggering of the action through the GitHub UI.
 
 permissions:
@@ -14,6 +15,7 @@ jobs:
     name: Analyze with CodeGuru Reviewer
     runs-on: ubuntu-latest
     steps:
+    
     - name: Configure AWS credentials
       id: iam-role
       continue-on-error: true
@@ -22,26 +24,30 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
         aws-region: ${{ secrets.AWS_REGION }}
     
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
       if: steps.iam-role.outcome == 'success'
       with:
         fetch-depth: 0
+    
     - name: Set up JDK 1.8
       if: steps.iam-role.outcome == 'success'
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    
     - name: Build project
       if: steps.iam-role.outcome == 'success'
       run: mvn compile -DskipTests
 
     - name: CodeGuru Reviewer
       uses: aws-actions/codeguru-reviewer@v1.1
-      if: steps.iam-role.outcome == 'success'
-      continue-on-error: false
-      with:          
+      #if: steps.iam-role.outcome == 'success'
+      #continue-on-error: false
+      with:
+        #build_path: ./target/classes
+        build_path: target       
         s3_bucket: ${{ secrets.AWS_CODEGURU_REVIEWER_S3_BUCKET }}
-        build_path: ./target/classes
 
     - name: Store SARIF file
       if: steps.iam-role.outcome == 'success'
@@ -52,6 +58,6 @@ jobs:
 
     - name: Upload review result
       if: steps.iam-role.outcome == 'success'
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: codeguru-results.sarif.json
